@@ -1,0 +1,13 @@
+version: "3"
+services:
+    camera-mocker:
+        image: camera-mocker
+        hostname: ipcam
+        network_mode: bridge
+        ports:
+            - 8554:8554
+        user: root
+        privileged: true
+        build:
+            context: .
+            dockerfile: Dockerfile
