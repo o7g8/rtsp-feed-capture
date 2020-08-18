@@ -105,3 +105,22 @@ https://github.com/VahidN/OpenCVSharp-Samples - OpenCVSharp examples
 
 https://csharp.hotexamples.com/examples/OpenCvSharp/VideoCapture/Read/php-videocapture-read-method-examples.html
 
+
+## Dockerize .NET app
+
+https://docs.microsoft.com/en-us/dotnet/core/docker/build-container?tabs=windows
+
+https://hub.docker.com/_/microsoft-dotnet-core-runtime/
+
+
+## Sampling of images
+
+Do grabbing for frames which we need to skip and read the necessary ones <https://answers.opencv.org/question/24714/skipping-frames-in-videocapture/>
+
+Some other stuff:
+```
+  self.videoCapture.set(cv2.CAP_PROP_FRAME_WIDTH, frameWidth)
+  self.videoCapture.set(cv2.CAP_PROP_FRAME_HEIGHT, frameHeight)
+  self.videoCapture.set(cv2.CAP_PROP_FPS, fpsCapture)
+  self.videoCapture.set(cv2.CAP_PROP_BUFFERSIZE, bufferSize)
+```

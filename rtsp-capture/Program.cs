@@ -23,19 +23,25 @@ namespace OpenCvTest
           quit(-1, "the capture is not opened");
         }
 
-        int i = 1;
+        var fps = (int) capture.Fps;
+        //fps = 900;
+        Console.WriteLine($"FPS: {capture.Fps}");
+
+        int i = -1;
         using(var image = new Mat()) {
           while(true) {
-            if(!capture.Read(image) || image.Empty()) {
-              quit(0, "end of video");
+            capture.Grab();
+            i++;
+            if(i % fps != 0) {
+              continue;
             }
 
-            var size = image.Size();
-            Console.WriteLine($"{size.Width} x {size.Height}");
+            capture.Read(image);
+            if(image.Empty()) {
+              quit(0, $"{DateTime.Now}: end of video");
+            }
+            Console.WriteLine($"{DateTime.Now}: #{i} {image.Width} x {image.Height}");
             //image.SaveImage($"frame{i}.jpg");
-
-            System.Threading.Thread.Sleep(TimeSpan.FromSeconds(2));
-            i++;
           }
         }
       }
