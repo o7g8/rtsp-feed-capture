@@ -1,6 +1,14 @@
-## Vide capture with OpenCV
+## Video capture with OpenCV
 
-Goal is to capture 1 frame per second.
+Start the RTSP mock server with `run.sh` in `../rtsp-server-mock`.
+
+Run videe frames capture:
+
+```
+dotnet run rtsp://127.0.0.1:8554/test >log
+```
+
+Measurements are done on 1 FPS.
 EC2: t3.small.
 OpenCV: CPU based.
 All CPU consumption figures below are per core.
@@ -37,6 +45,10 @@ So far I conclude that the 11-12% CPU consumption is a sort of "baseline" consum
 
 ## TODO
 
-* Introduce actors and see how many actors can be handled on CPU.
+* Introduce actors
+
+* Measure how many actors can be handled on CPU.
+
+* Build OpenCV and OpenCVSharp for GPU.
 
 * Test the performance of grabbing/reading on GPU.
