@@ -1,0 +1,17 @@
+[
+    {
+        "url": "rtsp://127.0.0.1:8554/test",
+        "name": "feed1",
+        "type": "file"
+    },
+    {
+        "url": "rtsp://127.0.0.1:8554/test",
+        "name": "feed2",
+        "type": "file"
+    },
+    {
+        "url": "rtsp://127.0.0.1:8554/test",
+        "name": "feed2",
+        "type": "file"
+    }
+]
