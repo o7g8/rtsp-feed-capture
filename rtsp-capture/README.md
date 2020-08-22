@@ -42,13 +42,3 @@ Obvious overhead on decoding of every frame.
 Outcome: CPU = 12-15%, able to keep pace with the 30 sec video. The reduction of `Read` calls doens't significantly reduce CPU load: even if we `Read` a frame every 4sec the CPU goes to 11-12%. `Read` of 1 frame per the entire video 30sec (while grabbing every frame) keeps the CPU at 11%.
 
 So far I conclude that the 11-12% CPU consumption is a sort of "baseline" consumed by `Grab`.
-
-## TODO
-
-* Introduce actors
-
-* Measure how many actors can be handled on CPU.
-
-* Build OpenCV and OpenCVSharp for GPU.
-
-* Test the performance of grabbing/reading on GPU.

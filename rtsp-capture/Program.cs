@@ -18,6 +18,7 @@ namespace OpenCvTest
       }
 
       string rtspUrl = args[0];
+      //Console.WriteLine(Cv2.GetBuildInformation());
       using(var capture = new VideoCapture(rtspUrl)) {
         if(!capture.IsOpened()) {
           quit(-1, "the capture is not opened");
