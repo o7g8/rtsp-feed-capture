@@ -86,16 +86,13 @@ sudo apt-get update
 sudo apt-get install docker-ce docker-ce-cli containerd.io
 ```
 
-Install docker-compose (Ubuntu 18.04)
-
-<https://docs.docker.com/compose/install/>
+Install docker-compose (Ubuntu 18.04) <https://docs.docker.com/compose/install/>
 
 ```
 sudo curl -L "https://github.com/docker/compose/releases/download/1.26.2/docker-compose-$(uname -s)-$(uname -m)" -o /usr/local/bin/docker-compose
 
 sudo chmod +x /usr/local/bin/docker-compose
 ```
-
 
 ## OpenCVSharp examples:
 
@@ -124,3 +121,9 @@ Some other stuff:
   self.videoCapture.set(cv2.CAP_PROP_FPS, fpsCapture)
   self.videoCapture.set(cv2.CAP_PROP_BUFFERSIZE, bufferSize)
 ```
+
+OpenCV may not be efficient in skipping frames (depends on the codec) <https://stackoverflow.com/questions/22704936/reading-every-nth-frame-from-videocapture-in-opencv>
+
+Ways to improve the situation:
+- use FFMPEG/GSTreamer capture "backend" in OpenCV and enforce to use GPU/hw decoder by the backend
+- write an "ingester" directly using libffmpeg and libgstreamer to skip the frames.
