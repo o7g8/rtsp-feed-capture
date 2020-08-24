@@ -1,4 +1,6 @@
 ﻿using System;
+//using System.Collections;
+using System.Linq;
 using Akka.Actor;
 
 namespace rstp_capture_akkanet
@@ -9,11 +11,17 @@ namespace rstp_capture_akkanet
         {
             var actorSystem = ActorSystem.Create("rtsp");
             var frameProcessor = actorSystem.ActorOf<FrameProcessor>("frameProcessor");
-            var feedReader = actorSystem.ActorOf(Props.Create<FeedReader>(frameProcessor), "feedReader");
-            feedReader.Tell(new ProcessFeed { Url = "rtsp://127.0.0.1:8554/test" });
+            var feedReaders = Enumerable
+                .Range(1, 3)
+                .Select(i => {
+                    var feedReader = actorSystem.ActorOf(Props.Create<FeedReader>(frameProcessor), $"feedReader{i}");
+                    feedReader.Tell(new ProcessFeed { Url = "rtsp://127.0.0.1:8554/test", Id = i });
+                    return feedReader;
+                })
+                .ToList();
 
             Console.ReadKey();
-            actorSystem.Stop(feedReader);
+            feedReaders.ForEach(x => actorSystem.Stop(x));
             actorSystem.Stop(frameProcessor);
         }
     }

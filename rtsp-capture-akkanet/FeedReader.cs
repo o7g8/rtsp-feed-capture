@@ -17,7 +17,7 @@ namespace rstp_capture_akkanet
         protected override void OnReceive(object message) {
             switch(message) {
                 case ProcessFeed feed:
-                    CaptureFeed(feed.Url);
+                    CaptureFeed(feed.Url, feed.Id);
                     break;
                 default:
                     Console.WriteLine("Invalid message");
@@ -25,11 +25,11 @@ namespace rstp_capture_akkanet
             }
         }
 
-        private void CaptureFeed(string url)
+        private void CaptureFeed(string url, int id)
         {
             while(true) {
-                Console.WriteLine($"Sending frame {frameNo}");
-                FrameProcessor.Tell(new ProcessFrame {Frame = null, FrameNo = frameNo});
+                Console.WriteLine($"Sending feed={id}, frame={frameNo}");
+                FrameProcessor.Tell(new ProcessFrame {Frame = null, FrameNo = frameNo, Id = id});
                 Thread.Sleep(1000);
                 frameNo++;
             }
