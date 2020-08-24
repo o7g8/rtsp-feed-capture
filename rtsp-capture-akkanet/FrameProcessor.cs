@@ -17,6 +17,7 @@ namespace rstp_capture_akkanet
 
         private void RunInference(object frame, long no, int id)
         {
+            //frame.SaveImage($"frame{i}.jpg");
             Console.WriteLine($"Doing inference of feed={id} frame={no}.");
         }
     }

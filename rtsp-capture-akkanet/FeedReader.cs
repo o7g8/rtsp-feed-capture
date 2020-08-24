@@ -1,6 +1,6 @@
 using System;
-using System.Threading;
 using Akka.Actor;
+using OpenCvSharp;
 
 namespace rstp_capture_akkanet
 {
@@ -14,8 +14,10 @@ namespace rstp_capture_akkanet
             FrameProcessor = frameProcessor;
         }
 
-        protected override void OnReceive(object message) {
-            switch(message) {
+        protected override void OnReceive(object message)
+        {
+            switch (message)
+            {
                 case ProcessFeed feed:
                     CaptureFeed(feed.Url, feed.Id);
                     break;
@@ -25,13 +27,37 @@ namespace rstp_capture_akkanet
             }
         }
 
-        private void CaptureFeed(string url, int id)
+        private void CaptureFeed(string url, int feedId)
         {
-            while(true) {
-                Console.WriteLine($"Sending feed={id}, frame={frameNo}");
-                FrameProcessor.Tell(new ProcessFrame {Frame = null, FrameNo = frameNo, Id = id});
-                Thread.Sleep(1000);
-                frameNo++;
+            // TODO: on the real webcam use https://getakka.net/articles/utilities/scheduler.html
+            // to send a message itself every 1 sec.
+            using (var capture = new VideoCapture(url))
+            {
+                var fps = (int)capture.Fps;
+                Console.WriteLine($"Feed {feedId} FPS: {capture.Fps}");
+                int i = -1;
+                using (var image = new Mat())
+                {
+                    while (true)
+                    {
+                        capture.Grab();
+                        i++;
+                        if (i % fps != 0)
+                        {
+                            continue;
+                        }
+
+                        capture.Read(image);
+                        if (image.Empty())
+                        {
+                            Console.WriteLine($"Feed {feedId}: end of video");
+                            break;
+                        }
+                        
+                        Console.WriteLine($"Feed {feedId}: sending frame {i}");
+                        FrameProcessor.Tell(new ProcessFrame {Frame = image, FrameNo = i, Id = feedId});
+                    }
+                }
             }
         }
     }

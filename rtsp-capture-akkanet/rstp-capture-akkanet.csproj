@@ -8,6 +8,8 @@
 
   <ItemGroup>
     <PackageReference Include="akka" Version="1.4.10" />
+    <PackageReference Include="OpenCvSharp4" Version="4.4.0.20200725" />
+    <PackageReference Include="OpenCvSharp4.runtime.ubuntu.18.04-x64" Version="4.4.0.20200725" />
   </ItemGroup>
 
 </Project>
