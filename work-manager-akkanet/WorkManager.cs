@@ -32,7 +32,7 @@ namespace work_manager_akkanet
         {
             return models.Select(model => new {
                 Key = model.ModelName,
-                Value = actorSystem.ActorOf(Props.Create<FrameStacker>(model.ModelName, model.FramesInStack, model.debugStackingTimeMs))
+                Value = actorSystem.ActorOf(Props.Create<FrameStacker>(Self, model.ModelName, model.FramesInStack, model.debugStackingTimeMs))
             }).ToDictionary(x => x.Key, x => x.Value);
         }
 
@@ -49,14 +49,24 @@ namespace work_manager_akkanet
                 case MsgProcessFrame frame:
                     ProcessFrame(frame);
                     break;
+                case MsgStackReady stack:
+                    ProcessStack(stack);
+                    break;
                 default:
                     break;
             }
         }
 
+        private void ProcessStack(MsgStackReady stack)
+        {
+
+        }
+
         private void ProcessFrame(MsgProcessFrame frame)
         {
             Console.WriteLine($"Received frame from {frame.Url}");
+            var stacker = frameStackers[frame.ModelName];
+            stacker.Tell(new MsgStackFrame {ModelName = frame.ModelName, Url = frame.Url});
         }
     }
 }
