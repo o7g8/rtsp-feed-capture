@@ -39,7 +39,7 @@ namespace work_manager_akkanet
         };
         static void Main(string[] args)
         {
-            var actorSystem = ActorSystem.Create("work_manager");
+            var actorSystem = ActorSystem.Create("workmanager");
             var workManager = actorSystem.ActorOf(Props.Create<WorkManager>(config, actorSystem));
             // var workManager = actorSystem.ActorOf<WorkManager>("workManager");
             // CreateFeedReaders(config.Feeds, actorSystem, workManager);
