@@ -46,6 +46,7 @@ namespace work_manager_akkanet
             
             if(framesStack.Count == framesInStack) {
                 Console.WriteLine($"Stacker {modelName} stack ready");
+                framesStack.Clear();
                 workManager.Tell(new MsgStackReady {ModelName = modelName});
             }
         }

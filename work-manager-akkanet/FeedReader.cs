@@ -44,6 +44,7 @@ namespace work_manager_akkanet
             var newFPS = FPS * rateChange.RateChange;
             if(newFPS > maxFPS) {
                 Console.WriteLine($"{url}: asked new rate {newFPS} > {maxFPS}, do nothing.");
+                return;
             }
             schedulerCancellation.Cancel();
             FPS = newFPS;

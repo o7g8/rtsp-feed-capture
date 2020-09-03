@@ -8,16 +8,22 @@ namespace work_manager_akkanet
     internal class WorkManager : UntypedActor
     {
         private readonly ActorSystem actorSystem;
-        private IReadOnlyList<IActorRef> feedReaders;
+        private readonly int maxQueueSize;
+        private Dictionary<string, List<IActorRef>>  feedReaders;
         private Dictionary<string, IActorRef> frameStackers;
         private Dictionary<string, IActorRef> inferencers;
+        private Dictionary<string, double> paceFactors;
+        private Dictionary<string, Queue<FrameStack>> inferenceQueue;
         
         public WorkManager(Config config, ActorSystem actorSystem)
         {
             this.actorSystem = actorSystem;
+            this.maxQueueSize = config.MaxQueueSize;
             feedReaders = CreateFeedReaders(config.Feeds);
             frameStackers = CreateFrameStackers(config.Models);
             inferencers = CreateInferencers(config.Models);
+            this.inferenceQueue = inferencers.Keys.ToDictionary(x => x, x => new Queue<FrameStack>(maxQueueSize));
+            paceFactors = inferencers.Keys.ToDictionary(x => x, x => 1.0);
         }
 
         private Dictionary<string, IActorRef> CreateInferencers(Model[] models)
@@ -36,11 +42,15 @@ namespace work_manager_akkanet
             }).ToDictionary(x => x.Key, x => x.Value);
         }
 
-        private List<IActorRef> CreateFeedReaders(Feed[] feeds)
+        private Dictionary<string, List<IActorRef>> CreateFeedReaders(Feed[] feeds)
         {
-            return feeds.Select(feed => 
-                actorSystem.ActorOf(Props.Create<FeedReader>(Self, feed.Url, feed.ModelName, feed.MaxFPS, feed.debugCaptureTimeMs))
-            ).ToList();
+            return feeds.Select(feed => new {
+                Key = feed.ModelName,
+                Value = actorSystem.ActorOf(Props.Create<FeedReader>(Self, feed.Url, feed.ModelName, feed.MaxFPS, feed.debugCaptureTimeMs))
+                }
+            )
+            .GroupBy(x => x.Key)
+            .ToDictionary(x => x.Key, x => x.Select(g => g.Value).ToList());
         }
 
         protected override void OnReceive(object message)
@@ -59,12 +69,24 @@ namespace work_manager_akkanet
 
         private void ProcessStack(MsgStackReady stack)
         {
+            Console.WriteLine($"WorkManager: {stack.ModelName} new frame stack ");
+            inferenceQueue[stack.ModelName].Enqueue(new FrameStack {ModelName = stack.ModelName});
+            Console.WriteLine($"WorkManager: {stack.ModelName} queue depth {inferenceQueue[stack.ModelName].Count}");
+            var paceFactor = inferenceQueue[stack.ModelName].Count > maxQueueSize ? 0.5 : 1.2;
+            ChangeFeedReadersPace(stack.ModelName, paceFactor);
+        }
 
+        private void ChangeFeedReadersPace(string modelName, double factor)
+        {
+            Console.WriteLine($"WorkManager: {modelName} old pace factor {paceFactors[modelName]}, new factor {factor}");
+            paceFactors[modelName] = factor;
+            feedReaders[modelName].ForEach(x => 
+                x.Tell(new MsgChangeRate {RateChange = factor}));
         }
 
         private void ProcessFrame(MsgProcessFrame frame)
         {
-            Console.WriteLine($"Received frame from {frame.Url}");
+            Console.WriteLine($"WorkManager: Received frame from {frame.Url}");
             var stacker = frameStackers[frame.ModelName];
             stacker.Tell(new MsgStackFrame {ModelName = frame.ModelName, Url = frame.Url});
         }

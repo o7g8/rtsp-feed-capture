@@ -16,6 +16,7 @@ namespace work_manager_akkanet
     class Program
     {
         private static readonly Config config = new Config {
+            MaxQueueSize = 3,
             Models = new Model[] {
                new Model {
                     ModelName = "model1",
@@ -41,20 +42,6 @@ namespace work_manager_akkanet
         {
             var actorSystem = ActorSystem.Create("workmanager");
             var workManager = actorSystem.ActorOf(Props.Create<WorkManager>(config, actorSystem));
-            // var workManager = actorSystem.ActorOf<WorkManager>("workManager");
-            // CreateFeedReaders(config.Feeds, actorSystem, workManager);
-            // CreateFrameStackers(config.Models, workManager);
-            // CreateInference(config.Models, workManager);
-            // var frameProcessor = actorSystem.ActorOf<FrameProcessor>("frameProcessor");
-            // var feedReaders = Enumerable
-            //     .Range(1, 10)
-            //     .Select(i => {
-            //         var feedReader = actorSystem.ActorOf(Props.Create<FeedReader>(frameProcessor), $"feedReader{i}");
-            //         feedReader.Tell(new ProcessFeed { Url = "rtsp://127.0.0.1:8554/test", Id = i });
-            //         return feedReader;
-            //     })
-            //     .ToList();
-
             Console.ReadKey();
             actorSystem.Stop(workManager);
         }

@@ -19,5 +19,7 @@ namespace work_manager_akkanet
     class Config {
         public Feed[] Feeds = new Feed[0];
         public Model[] Models = new Model[0];
+
+        public int MaxQueueSize { get; internal set; }
     }
 }
