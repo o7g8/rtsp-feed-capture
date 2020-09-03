@@ -39,13 +39,24 @@ namespace work_manager_akkanet
         private List<IActorRef> CreateFeedReaders(Feed[] feeds)
         {
             return feeds.Select(feed => 
-                actorSystem.ActorOf(Props.Create<FeedReader>(feed.Url, feed.ModelName, feed.MaxFPS, feed.debugCaptureTimeMs))
+                actorSystem.ActorOf(Props.Create<FeedReader>(Self, feed.Url, feed.ModelName, feed.MaxFPS, feed.debugCaptureTimeMs))
             ).ToList();
         }
 
         protected override void OnReceive(object message)
         {
-            throw new System.NotImplementedException();
+            switch(message) {
+                case MsgProcessFrame frame:
+                    ProcessFrame(frame);
+                    break;
+                default:
+                    break;
+            }
+        }
+
+        private void ProcessFrame(MsgProcessFrame frame)
+        {
+            Console.WriteLine($"Received frame from {frame.Url}");
         }
     }
 }
