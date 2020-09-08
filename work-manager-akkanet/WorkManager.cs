@@ -10,6 +10,7 @@ namespace work_manager_akkanet
 
         private readonly ActorSystem actorSystem;
         private readonly int maxQueueSize;
+        private readonly int syncBeatPeriodMs;
         private Dictionary<string, List<IActorRef>>  feedReaders;
         private Dictionary<string, IActorRef> frameStackers;
         private Dictionary<string, IActorRef> inferencers;
@@ -21,6 +22,7 @@ namespace work_manager_akkanet
         {
             this.actorSystem = actorSystem;
             this.maxQueueSize = config.MaxQueueSize;
+            this.syncBeatPeriodMs = config.SyncBeat;
             feedReaders = CreateFeedReaders(config.Feeds);
             frameStackers = CreateFrameStackers(config.Models);
             inferencers = CreateInferencers(config.Models);
@@ -40,7 +42,7 @@ namespace work_manager_akkanet
 
         protected override void PreStart() {
             this.sync = Context.System.Scheduler.ScheduleTellRepeatedlyCancelable(
-                0, 1000, Self, new MsgSync(), Self
+                0, syncBeatPeriodMs, Self, new MsgSync(), Self
             );
         }
 
@@ -64,7 +66,7 @@ namespace work_manager_akkanet
         {
             return feeds.Select(feed => new {
                 Key = feed.ModelName,
-                Value = actorSystem.ActorOf(Props.Create<FeedReader>(Self, feed.Url, feed.ModelName, feed.MaxFPS, feed.debugCaptureTimeMs))
+                Value = actorSystem.ActorOf(Props.Create<FeedReader>(Self, feed.Url, feed.ModelName, feed.debugCaptureTimeMs))
                 }
             )
             .GroupBy(x => x.Key)

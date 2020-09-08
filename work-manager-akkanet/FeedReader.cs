@@ -9,11 +9,9 @@ namespace work_manager_akkanet
         private readonly IActorRef workManager;
         private readonly string url;
         private readonly string modelName;
-        private readonly int maxFPS;
-
         private readonly int debugCaptureTimeMs;
 
-        public FeedReader(IActorRef workManager, string url, string modelName, int maxFPS, int debugCaptureTimeMs)
+        public FeedReader(IActorRef workManager, string url, string modelName, int debugCaptureTimeMs)
         {
            this.workManager = workManager;
            this.url = url;

@@ -4,8 +4,6 @@ namespace work_manager_akkanet
     class Feed {
         public string Url {get; set;}
         public string ModelName {get; set;}
-        public int MaxFPS {get; set;}
-
         public int debugCaptureTimeMs {get; set; }
     };
 
@@ -21,5 +19,6 @@ namespace work_manager_akkanet
         public Model[] Models = new Model[0];
 
         public int MaxQueueSize { get; internal set; }
+        public int SyncBeat { get; internal set; }
     }
 }
