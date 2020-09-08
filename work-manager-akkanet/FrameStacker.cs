@@ -1,50 +1,39 @@
 using System;
 using System.Collections.Generic;
-using System.Threading;
+using System.Threading.Tasks;
 using Akka.Actor;
 
 namespace work_manager_akkanet
 {
-    internal class FrameStacker : UntypedActor
+    internal class FrameStacker : ReceiveActor
     {
         private readonly IActorRef workManager;
         private readonly string modelName;
-        private readonly int framesInStack;
-
+        private readonly int maxFramesInStack;
         private readonly int debugStackingTimeMs;
-
         private readonly Queue<object> framesStack;
 
         public FrameStacker(IActorRef workManager, string modelName, int framesInStack, int debugStackingTimeMs)
         {
             this.workManager = workManager;
             this.modelName = modelName;
-            this.framesInStack = framesInStack;
+            this.maxFramesInStack = framesInStack;
             this.debugStackingTimeMs = debugStackingTimeMs;
             framesStack = new Queue<object>(framesInStack);
-        }
-        protected override void OnReceive(object message)
-        {
-            switch(message) {
-                case MsgStackFrame frame:
-                    StackFrame(frame);
-                    break;
-                default:
-                    break;
-            }
+            ReceiveAsync<MsgStackFrame>(frame => StackFrame(frame));
         }
 
-        private void StackFrame(MsgStackFrame frame)
+        private async Task StackFrame(MsgStackFrame frame)
         {
             if(frame.ModelName != modelName) {
                 throw new InvalidOperationException($"Wrong model: {frame.ModelName}, expected: {modelName}");
             }
 
             Console.WriteLine($"Stacker {modelName} stacking frame from {frame.Url}");
-            Thread.Sleep(debugStackingTimeMs);
+            await Task.Delay(debugStackingTimeMs);
             framesStack.Enqueue(frame);
             
-            if(framesStack.Count == framesInStack) {
+            if(framesStack.Count == maxFramesInStack) {
                 Console.WriteLine($"Stacker {modelName} stack ready");
                 framesStack.Clear();
                 workManager.Tell(new MsgStackReady {ModelName = modelName});
