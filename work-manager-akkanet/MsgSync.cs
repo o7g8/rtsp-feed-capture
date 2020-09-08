@@ -1,8 +1,8 @@
 namespace work_manager_akkanet
 {
-    public class MsgCaptureFrame
+    internal class MsgSync
     {
-        public MsgCaptureFrame()
+        public MsgSync()
         {
         }
     }
