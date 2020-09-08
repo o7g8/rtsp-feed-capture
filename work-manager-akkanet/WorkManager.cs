@@ -7,30 +7,29 @@ namespace work_manager_akkanet
 {
     internal class WorkManager : UntypedActor
     {
-
         private readonly ActorSystem actorSystem;
-        private readonly int maxQueueSize;
+        private readonly int maxWorkQueueSize;
         private readonly int syncBeatPeriodMs;
         private Dictionary<string, List<IActorRef>>  feedReaders;
         private Dictionary<string, IActorRef> frameStackers;
         private Dictionary<string, IActorRef> inferencers;
-        private Dictionary<string, Queue<FrameStack>> inferenceQueue;
-        private Dictionary<string, Queue<MsgRequestInferenceJob>> inferenceRequestsQueue;
+        private Dictionary<string, Queue<FrameStack>> inferenceWorkQueue;
+        private Dictionary<string, Queue<MsgRequestInferenceJob>> inferenceAvailabilityQueue;
         private ICancelable sync;
         
         public WorkManager(Config config, ActorSystem actorSystem)
         {
             this.actorSystem = actorSystem;
-            this.maxQueueSize = config.MaxQueueSize;
+            this.maxWorkQueueSize = config.MaxQueueSize;
             this.syncBeatPeriodMs = config.SyncBeat;
             feedReaders = CreateFeedReaders(config.Feeds);
             frameStackers = CreateFrameStackers(config.Models);
             inferencers = CreateInferencers(config.Models);
-            this.inferenceQueue = inferencers.Keys.ToDictionary(x => x, x => new Queue<FrameStack>(maxQueueSize));
-            this.inferenceRequestsQueue = CreateInferenceRequestsQueue(inferencers.Keys);
+            this.inferenceWorkQueue = inferencers.Keys.ToDictionary(x => x, x => new Queue<FrameStack>(maxWorkQueueSize));
+            this.inferenceAvailabilityQueue = CreateInferenceAvailabilityQueue(inferencers.Keys);
         }
 
-        private Dictionary<string, Queue<MsgRequestInferenceJob>> CreateInferenceRequestsQueue(IEnumerable<string> models)
+        private Dictionary<string, Queue<MsgRequestInferenceJob>> CreateInferenceAvailabilityQueue(IEnumerable<string> models)
         {
             var result = new Dictionary<string, Queue<MsgRequestInferenceJob>>();
             foreach(var model in models) {
@@ -83,7 +82,7 @@ namespace work_manager_akkanet
                     ProcessStack(stack);
                     break;
                 case MsgRequestInferenceJob inferenceRequest:
-                    ProcessInferenceRequest(inferenceRequest);
+                    ProcessInferenceAvailabilityRequest(inferenceRequest);
                     break;
                 case MsgSync syncBeat:
                     ProcessSyncBeat();
@@ -95,38 +94,38 @@ namespace work_manager_akkanet
 
         private void ProcessSyncBeat()
         {
-            foreach(var modelName in this.inferenceQueue.Keys) {
-                var queueLength = inferenceQueue[modelName].Count();
-                if(queueLength < maxQueueSize) {
-                    Console.WriteLine($"WorkManager: {modelName} syncbeat requesting frames (Q={queueLength}).");
+            foreach(var modelName in this.inferenceWorkQueue.Keys) {
+                var workQueueLength = inferenceWorkQueue[modelName].Count();
+                if(workQueueLength < maxWorkQueueSize) {
+                    Console.WriteLine($"WorkManager: {modelName} syncbeat requesting frames (Q={workQueueLength}).");
                     feedReaders[modelName].ForEach(x => x.Tell(new MsgRequestFrame()));
                 } else {
-                    Console.WriteLine($"WorkManager: {modelName} syncbeat skipping frames (Q={queueLength}).");
+                    Console.WriteLine($"WorkManager: {modelName} syncbeat skipping frames (Q={workQueueLength}).");
                 }
             }
         }
 
-        private void ProcessInferenceRequest(MsgRequestInferenceJob inferenceRequest)
+        private void ProcessInferenceAvailabilityRequest(MsgRequestInferenceJob inferenceRequest)
         {
-            var jobQueue = inferenceQueue[inferenceRequest.ModelName];
-            if(jobQueue.Any()) {
-                Console.WriteLine($"WorkManager: {inferenceRequest.ModelName} submitting inference (Q={jobQueue.Count}).");
-                var job = jobQueue.Dequeue();
+            var workQueue = inferenceWorkQueue[inferenceRequest.ModelName];
+            if(workQueue.Any()) {
+                Console.WriteLine($"WorkManager: {inferenceRequest.ModelName} submitting inference (Q={workQueue.Count}).");
+                var job = workQueue.Dequeue();
                 inferencers[inferenceRequest.ModelName].Tell(new MsgInferenceJob {ModelName = job.ModelName, Stack = job.FramesStack });
             } else {
                 Console.WriteLine($"WorkManager: {inferenceRequest.ModelName} requesting inference.");
-                inferenceRequestsQueue[inferenceRequest.ModelName].Enqueue(inferenceRequest);
+                inferenceAvailabilityQueue[inferenceRequest.ModelName].Enqueue(inferenceRequest);
             }
         }
 
         private void ProcessStack(MsgStackReady stack)
         {
-            Console.WriteLine($"WorkManager: {stack.ModelName} new frame stack (Q={inferenceQueue[stack.ModelName].Count}, QR={inferenceRequestsQueue[stack.ModelName].Count})");
-            if(inferenceRequestsQueue[stack.ModelName].Any()) {
-                inferenceRequestsQueue[stack.ModelName].Dequeue();
+            Console.WriteLine($"WorkManager: {stack.ModelName} new frame stack (Q={inferenceWorkQueue[stack.ModelName].Count}, QA={inferenceAvailabilityQueue[stack.ModelName].Count})");
+            if(inferenceAvailabilityQueue[stack.ModelName].Any()) {
+                inferenceAvailabilityQueue[stack.ModelName].Dequeue();
                 inferencers[stack.ModelName].Tell(new MsgInferenceJob {ModelName = stack.ModelName, Stack = stack.Stack });
             } else {
-                inferenceQueue[stack.ModelName].Enqueue(new FrameStack {ModelName = stack.ModelName});
+                inferenceWorkQueue[stack.ModelName].Enqueue(new FrameStack {ModelName = stack.ModelName});
             }
         }
 
